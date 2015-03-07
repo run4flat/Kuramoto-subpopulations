@@ -18,6 +18,9 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	
+	/* Make sure the working directory is in a clean state */
+	if (system("perl git_is_dirty.pl") != 0) exit(1);
+	
 	/* Args are input population file, value of K, and number of time steps. */
 	double K = atof(argv[1]);
 	int N_time_steps = atoi(argv[2]);
@@ -39,6 +42,13 @@ int main(int argc, char **argv) {
 	
 	/* Run a bunch of time steps */
 	run_sim(omegas, thetas, theta_diffs, N_time_steps, K);
+	
+	/* Update the provenance file */
+	FILE * out_fh = fopen("provenance.txt", "a");
+	fprintf(out_fh, "slips.c created file slips,K=%f.txt based on %d simulation steps with code from commit ",
+		K, N_time_steps);
+	fclose(out_fh);
+	system("git log -1 --pretty=%h >> provenance.txt");
 	
 	/* Clean up */
 	sb_free(omegas);
@@ -83,7 +93,9 @@ void run_sim(double * om, double * th, double * th_diff, int N_time_steps, doubl
 	double * v4 = malloc(sizeof(double) * N_osc);
 	double * th_vel = malloc(sizeof(double) * N_osc);
 	
-	FILE * out_fh = fopen("output.txt", "w");
+	char filename[80];
+	sprintf(filename, "slips,K=%f.txt", K);
+	FILE * out_fh = fopen(filename, "w");
 	
 	int i, j;
 	for (i = 0; i < N_time_steps; i++) {
