@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "stretchy_buffer.h"
+#define CODE_DIRECTORY "/home/dcmertens/projects/2015/03-06-Kuramoto-Slips/"
 
 /* Open the filename and read one double at a time. Returns a double stretchybuffer */
 double * load_rows_of_text (char * filename);
@@ -19,7 +20,9 @@ int main(int argc, char **argv) {
 	}
 	
 	/* Make sure the working directory is in a clean state */
-	if (system("perl git_is_dirty.pl") != 0) exit(1);
+	char command[160];
+	sprintf(command, "perl " CODE_DIRECTORY "add_slips_provenance.pl %s %s", argv[1], argv[2]);
+	if (system(command) != 0) exit(1);
 	
 	/* Args are input population file, value of K, and number of time steps. */
 	double K = atof(argv[1]);
@@ -42,13 +45,6 @@ int main(int argc, char **argv) {
 	
 	/* Run a bunch of time steps */
 	run_sim(omegas, thetas, theta_diffs, N_time_steps, K);
-	
-	/* Update the provenance file */
-	FILE * out_fh = fopen("provenance.txt", "a");
-	fprintf(out_fh, "slips.c created file slips,K=%f.txt based on %d simulation steps with code from commit ",
-		K, N_time_steps);
-	fclose(out_fh);
-	system("git log -1 --pretty=%h >> provenance.txt");
 	
 	/* Clean up */
 	sb_free(omegas);
