@@ -1,7 +1,8 @@
 use strict;
 use warnings;
 use PDL;
-my $xs = rcols('output.txt') * 0.01;
+my $infile = shift @ARGV or die "You must give an input file\n";
+my $xs = rcols($infile) * 0.01;
 my $ys = $xs->sequence;
 use PDL::Graphics::Prima::Simple;
 plot(
