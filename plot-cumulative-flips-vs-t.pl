@@ -1,15 +1,26 @@
 use strict;
 use warnings;
+
+my $is_signed = 0;
+if ($ARGV[0] and $ARGV[0] eq 'signed') {
+	$is_signed = 1;
+	shift @ARGV;
+}
+
+die "You must give at least one input file\n" unless @ARGV;
+
 use PDL;
-my $infile = shift @ARGV or die "You must give an input file\n";
-my $xs = rcols($infile) * 0.01;
-my $ys = $xs->sequence;
 use PDL::Graphics::Prima::Simple;
-plot(
-	-data => ds::Pair($xs, $ys, plotTypes => [
-		ppair::Lines, #ppair::TrendLines(color => cl::LightRed)
-	]),
-);
+
+# Create one data set per data file
+my %datasets;
+for my $file (@ARGV) {
+	my ($xs, $dir) = rcols($file, 0, 2);
+	$xs *= 0.01;
+	my $ys = $is_signed ? $dir->cumusumover : $xs->sequence;
+	$datasets{'-' . $file} = ds::Pair($xs, $ys, plotTypes => ppair::Lines);
+}
+plot(%datasets);
 
 __END__
 my $S = $xs->nelem;
