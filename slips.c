@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
 	/* Build theta differences */
 	double * theta_diffs = malloc(sizeof(double) * (N-1));
 	int i;
-	for (i = 1; i < N; i++) theta_diffs[i-1] = 0;
+	for (i = 1; i < N; i++) theta_diffs[i-1] = thetas[i] - thetas[i-1];
 	
 	/* Run a bunch of time steps */
 	run_sim(omegas, thetas, theta_diffs, N_time_steps, K);
