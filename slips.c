@@ -9,7 +9,7 @@
 #define CODE_DIRECTORY "/home/dcmertens/projects/2015/03-06-Kuramoto-Slips/"
 
 /* Open the filename and read one double at a time. Returns a double stretchybuffer */
-double * load_rows_of_text (char * filename);
+double * load_data (char * filename_stem);
 /* Run the time stepper */
 void run_sim(double * om, double * th, double * th_diff, int N_time_steps, double K);
 
@@ -30,8 +30,8 @@ int main(int argc, char **argv) {
 	printf("Simulating at K=%f for %d time steps\n", K, N_time_steps);
 	
 	/* Load omegas from file */
-	double * omegas = load_rows_of_text("population.txt");
-	double * thetas = load_rows_of_text("positions.txt");
+	double * omegas = load_data("population");
+	double * thetas = load_data("positions");
 	int N = sb_count(omegas);
 	if (sb_count(thetas) != N) {
 		printf("Omegas and thetas have different numbers of oscillators!\n");
@@ -50,6 +50,13 @@ int main(int argc, char **argv) {
 	/* Run a bunch of time steps */
 	run_sim(omegas, thetas, theta_diffs, N_time_steps, K);
 	
+	/* Save the final theta positions in binary form for potential later use */
+	char out_filename[160];
+	sprintf(out_filename, "final-thetas,K=%s.bin", argv[1]);
+	FILE * out_fh = fopen(out_filename, "w");
+	fwrite(thetas, sizeof(double), sb_count(thetas), out_fh);
+	fclose(out_fh);
+	
 	/* Clean up */
 	sb_free(omegas);
 	sb_free(thetas);
@@ -57,22 +64,45 @@ int main(int argc, char **argv) {
 	return (0);
 }
 
-double * load_rows_of_text (char * filename) {
+/* Given a stem (like "population") loads raw data from "population.bin"
+ * if it exists, or text data from "population.txt" if it exists, or
+ * prints a warning and returns null. */
+double * load_data (char * filename_stem) {
+	char full_filename[160];
 	double * data = 0;
+	FILE * in_fh;
 	
-	FILE * in_fh = fopen(filename, "r");
-	if (in_fh == 0) {
-		printf("Unable to open file [%s]\n", filename);
-		return 0;
-	}
-	
-	while(!feof(in_fh)) {
+	/* Try the binary file */
+	sprintf(full_filename, "%s.bin", filename_stem);
+	if (in_fh = fopen(full_filename, "r")) {
 		double datum;
-		if(fscanf(in_fh, "%lf", &datum) == 1) sb_push(data, datum);
+		int bytes_read;
+		while(1) {
+			/* Read on number at a time */
+			bytes_read = fread(&datum, sizeof(double), 1, in_fh);
+			/* Exit when there's nothing else to read */
+			if (bytes_read < sizeof(double)) break;
+			/* Add the data we read and advance to the next */
+			sb_push(data, datum);
+		}
+		fclose(in_fh);
+		return data;
 	}
 	
-	fclose(in_fh);
-	return data;
+	/* Try the text file */
+	sprintf(full_filename, "%s.txt", filename_stem);
+	if (in_fh = fopen(full_filename, "r")) {
+		double datum;
+		while(!feof(in_fh)) {
+			if(fscanf(in_fh, "%lf", &datum) == 1) sb_push(data, datum);
+		}
+		fclose(in_fh);
+		return data;
+	}
+	
+	/* Print a warning about trouble */
+	printf("Unable to open file [%s]\n", filename_stem);
+	return 0;
 }
 
 /* Compute the velocity for the given positions, or an Euler step from them
