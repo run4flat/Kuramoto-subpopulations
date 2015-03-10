@@ -129,6 +129,33 @@ void run_sim(double * om, double * th, double * th_diff, int N_time_steps, doubl
 				th_diff[j] += 2.0 * M_PI;
 			}
 		}
+		
+		/* Fix relative phase positions every 1000 steps so they don't get
+		 * out of sync (ha!) with the real phase positions. */
+		if (i % 1000 == 0) {
+			double curr_diff;
+			for (j = 0; j < N_osc - 1; j++) {
+				curr_diff = th[j+1] - th[j] - M_PI_2;
+				if (curr_diff > M_PI) curr_diff -= 2.0 * M_PI;
+				else if (curr_diff < -M_PI) curr_diff += 2.0 * M_PI;
+				/* If there is a big difference, it's due to 2pi wrapping.
+				 * Figure out which way we're going to unwind and print a slip
+				 * for the process. */
+				if (curr_diff - th_diff[j] > 6) {
+					fprintf(out_fh, "%d %d -1\n", i, j);
+				}
+				else if (curr_diff - th_diff[j] < -6) {
+					fprintf(out_fh, "%d %d 1\n", i, j);
+				}
+				else if (curr_diff - th_diff[j] > M_PI
+					|| curr_diff - th_diff[j] < -M_PI
+				) {
+					printf("Excessively large dtheta difference of %f at i=%d, j=%d\n",
+						curr_diff - th_diff[j], i, j);
+				}
+				th_diff[j] = curr_diff;
+			}
+		}
 	}
 	printf("\n");
 	
