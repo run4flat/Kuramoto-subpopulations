@@ -58,12 +58,16 @@ int main(int argc, char **argv) {
 	}
 	double slope = (S_xy * N - S_x * S_y) / (S_xx * N - S_x * S_x);
 	double y0 = (S_xy - slope * S_xx) / S_x;
-
-	int best_MSER_index = i;
-	double best_MSER_score //= MSER_score(y0, slope, slip_time_indices, cumulative_N_slips, i);
+	
+	/* keep track of the best score, its index, slope, and intercept */
+	double best_MSER_score 
 		= (N * y0*y0 + 2 * y0 * slope * S_x
 		- 2 * y0 * S_y + slope*slope * S_xx
 		 - 2 * slope * S_xy + S_yy) / N/N;
+	int best_MSER_index = i;
+	double best_slope = slope;
+	double best_y0 = y0;
+	
 	/* Now compute the MSER score for the remaining points */
 	for (; i >= 0; i--) {
 		x = slip_time_indices[i] * 0.01;
@@ -78,28 +82,18 @@ int main(int argc, char **argv) {
 		slope = (S_xy * N - S_x * S_y) / (S_xx * N - S_x * S_x);
 		y0 = (S_xy - slope * S_xx) / S_x;
 		
-		double curr_MSER_score //= MSER_score(y0, slope, slip_time_indices, cumulative_N_slips, i);
+		double curr_MSER_score
 			= (N * y0*y0 + 2 * y0 * slope * S_x
 			- 2 * y0 * S_y + slope*slope * S_xx
 			 - 2 * slope * S_xy + S_yy) / N/N;
 		if (curr_MSER_score < best_MSER_score) {
 			best_MSER_score = curr_MSER_score;
 			best_MSER_index = i;
+			best_slope = slope;
+			best_y0 = y0;
 		}
 	}
 	
-	printf("Best MSER score occurs at index %d, time %f\n", best_MSER_index, slip_time_indices[best_MSER_index] * 0.01);
+	printf("Best MSER score occurs at index %d, time %f, with slope %g and intercept %f\n",
+		best_MSER_index, slip_time_indices[best_MSER_index] * 0.01, best_slope, best_y0);
 }
-
-double MSER_score(double y0, double slope, int * xs, int * ys, int index) {
-	int i;
-	double score = 0;
-	double diff;
-	for (i = sb_count(xs) - 1; i >= index; i--) {
-		diff = y0 + slope * xs[i] - ys[i];
-		score += diff*diff;
-	}
-	double length = sb_count(xs) - index + 1;
-	return score / length / length;
-}
-
