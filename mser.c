@@ -7,7 +7,7 @@
 #include <math.h>
 #include "stretchy_buffer.h"
 
-double MSER_score(double y0, double slope, int * xs, int * ys, int index);
+void save_results(char * filename, int offset, double trans_time, double slope, double y0);
 
 int main(int argc, char **argv) {
 	if (argc != 3) {
@@ -94,6 +94,50 @@ int main(int argc, char **argv) {
 		}
 	}
 	
+	/* Add this information to the list of transient data */
+	save_results(argv[1], best_MSER_index,
+		slip_time_indices[best_MSER_index] * 0.01, best_slope, best_y0);
+	/* print the result, too */
 	printf("Best MSER score occurs at index %d, time %f, with slope %g and intercept %f\n",
 		best_MSER_index, slip_time_indices[best_MSER_index] * 0.01, best_slope, best_y0);
+}
+
+void save_results(char * filename, int offset, double trans_time, double slope, double y0) {
+	FILE * in_fh;
+	FILE * out_fh;
+	out_fh = fopen("transients.tmp", "w");
+	if (!out_fh) {
+		printf("!!! Unable to save results!!!\n");
+		return;
+	}
+	
+	char curr_filename[160];
+	int curr_offset;
+	double curr_trans_time, curr_slope, curr_y0;
+	
+	/* Copy previous results, excluding any results for this file */
+	if (in_fh = fopen("transients.txt", "r")) {
+		while(!feof(in_fh)) {
+			int N_read = fscanf(in_fh, "%s %d %lf %lf %lf", curr_filename, &curr_offset,
+				&curr_trans_time, &curr_slope, &curr_y0);
+			if (N_read != 5) break;
+			if (strcmp(curr_filename, filename) != 0) {
+				fprintf(out_fh, "%s %d %lf %lf %lf\n", curr_filename, curr_offset,
+					curr_trans_time, curr_slope, curr_y0);
+			}
+			else {
+				printf("Replacing previous result for %s\n", filename);
+			}
+		}
+		fclose(in_fh);
+	}
+	
+	/* Add this file's results */
+	fprintf(out_fh, "%s %d %lf %lf %lf\n", filename, offset, trans_time,
+		slope, y0);
+	fclose(out_fh);
+	
+	/* Shuffle files around */
+	remove("transients.txt");
+	rename("transients.tmp", "transients.txt");
 }
