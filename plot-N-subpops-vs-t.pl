@@ -11,9 +11,16 @@ use PDL::Graphics::Prima::Simple;
 
 # Get the number of oscillatos
 my $N_osc = 0;
-open my $in_fh, '<', 'population.txt';
-$N_osc++ while(<$in_fh>);
-close $in_fh;
+if (-f 'population.txt') {
+	open my $in_fh, '<', 'population.txt';
+	$N_osc++ while(<$in_fh>);
+	close $in_fh;
+}
+elsif (-f 'population.bin') {
+	use PDL::IO::FlexRaw;
+	my ($oms) = readflex('population.bin');
+	$N_osc = $oms->nelem;
+}
 
 # Create one data set per data file
 my %datasets;
