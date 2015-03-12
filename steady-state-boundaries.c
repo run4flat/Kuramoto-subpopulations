@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "stretchy_buffer.h"
+#include "load_data.h"
 #define CODE_DIRECTORY "/home/dcmertens/projects/2015/03-06-Kuramoto-Slips/"
 
 typedef struct {
@@ -48,7 +49,8 @@ int main(int argc, char **argv) {
 	double * thetas = load_data("positions");
 	int N = sb_count(omegas);
 	if (sb_count(thetas) != N) {
-		printf("Omegas and thetas have different numbers of oscillators!\n");
+		printf("Omegas (N=%d) and thetas (N=%d) have different numbers of oscillators!\n",
+			N, sb_count(thetas));
 		exit(1);
 	}
 	
@@ -160,47 +162,6 @@ int main(int argc, char **argv) {
 	sb_free(slips);
 	free(is_boundary);
 	return (0);
-}
-
-/* Given a stem (like "population") loads raw data from "population.bin"
- * if it exists, or text data from "population.txt" if it exists, or
- * prints a warning and returns null. */
-double * load_data (char * filename_stem) {
-	char full_filename[160];
-	double * data = 0;
-	FILE * in_fh;
-	
-	/* Try the binary file */
-	sprintf(full_filename, "%s.bin", filename_stem);
-	if (in_fh = fopen(full_filename, "r")) {
-		double datum;
-		int bytes_read;
-		while(1) {
-			/* Read on number at a time */
-			bytes_read = fread(&datum, sizeof(double), 1, in_fh);
-			/* Exit when there's nothing else to read */
-			if (bytes_read < sizeof(double)) break;
-			/* Add the data we read and advance to the next */
-			sb_push(data, datum);
-		}
-		fclose(in_fh);
-		return data;
-	}
-	
-	/* Try the text file */
-	sprintf(full_filename, "%s.txt", filename_stem);
-	if (in_fh = fopen(full_filename, "r")) {
-		double datum;
-		while(!feof(in_fh)) {
-			if(fscanf(in_fh, "%lf", &datum) == 1) sb_push(data, datum);
-		}
-		fclose(in_fh);
-		return data;
-	}
-	
-	/* Print a warning about trouble */
-	printf("Unable to open file [%s]\n", filename_stem);
-	return 0;
 }
 
 /* Compute the velocity for the given positions, or an Euler step from them
