@@ -33,11 +33,11 @@ int main(int argc, char **argv) {
 	}
 	
 	/* Make sure the working directory is in a clean state */
-//	char command[160];
-//	sprintf(command, "perl " CODE_DIRECTORY "add_slips_provenance.pl %s %s", argv[1], argv[2]);
-//	if (system(command) != 0) exit(1);
+	char command[160];
+	sprintf(command, "perl " CODE_DIRECTORY "add_boundaries_provenance.pl %s %s", argv[1], argv[2]);
+	if (system(command) != 0) exit(1);
 	
-	/* Args are input population file, value of K, and number of time steps. */
+	/* Args are value of K and number of time steps. */
 	double K = atof(argv[1]);
 	int N_time_steps = atoi(argv[2]);
 	int N_desired_steady_state_steps = N_time_steps;
