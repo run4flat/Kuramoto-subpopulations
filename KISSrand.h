@@ -1,14 +1,14 @@
 /* From GoodPracticeRNG.pdf */
 unsigned int devrand(void)
 {
-	int fn;
+	FILE * fn;
 	unsigned int r;
-	fn = fopen("/dev/urandom", "r");
-	if (fn == -1)
-		exit(-1); /* Failed! */
-	if (read(fn, &r, 4) != 4)
-		exit(-1); /* Failed! */
-	close(fn);
+	if (fn = fopen("/dev/urandom", "r")) {
+		if (fread(&r, sizeof(unsigned int), 1, fn) != 1)
+			exit(-1); /* Failed! */
+		fclose(fn);
+	}
+	else exit(-1); /* Failed! */
 	return r;
 }
 static unsigned int x = 123456789,y = 362436000,z = 521288629,c = 7654321; /* Seed variables */
